@@ -1,9 +1,13 @@
 import os
 import sys
+import json
+from datetime import datetime
 from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
 
 
 def analyze_stock_with_gemini(ticker: str) -> str:
@@ -33,6 +37,23 @@ def analyze_stock_with_gemini(ticker: str) -> str:
     return response.text
 
 
+def save_result(ticker: str, analysis: str) -> str:
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{ticker.upper()}_{timestamp}.json"
+    filepath = os.path.join(RESULTS_DIR, filename)
+
+    data = {
+        "ticker": ticker.upper(),
+        "generated_at": datetime.now().isoformat(),
+        "analysis": analysis,
+    }
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return filepath
+
+
 def main():
     ticker = sys.argv[1] if len(sys.argv) > 1 else "AAPL"
 
@@ -45,6 +66,9 @@ def main():
     print(analysis)
     print("=" * 60)
     print("※ 本情報は投資アドバイスではありません。")
+
+    filepath = save_result(ticker, analysis)
+    print(f"\n[保存済み] {filepath}")
 
 
 if __name__ == "__main__":
